@@ -8,7 +8,7 @@ class SimpleAudioEditor:
     def __init__(self, root):
         self.root = root
         self.root.title("Простой Аудиоплеер и Редактор")
-        self.root.geometry("600x700")
+        self.root.geometry("600x750")
 
         self.audio_file = None
         self.audio = None
@@ -48,6 +48,13 @@ class SimpleAudioEditor:
         self.volume_entry = Entry(root, width=10)
         self.volume_entry.pack(pady=5)
         Button(root, text="Применить громкость", command=self.adjust_volume).pack(pady=5)
+
+        # Изменение скорости
+        Label(root, text="Изменение скорости воспроизведения").pack(pady=10)
+        self.speed_scale = Scale(root, from_=50, to=150, orient=HORIZONTAL, label="Скорость (%)", resolution=5)
+        self.speed_scale.set(100)
+        self.speed_scale.pack(pady=5)
+        Button(root, text="Применить скорость", command=self.change_speed).pack(pady=5)
 
         # Сохранение
         Button(root, text="Сохранить аудиофайл", command=self.save_audio).pack(pady=10)
@@ -128,6 +135,7 @@ class SimpleAudioEditor:
             self.audio_length = len(self.audio) / 1000
             self.canvas.delete("progress")
             self.update_time_label(0, self.audio_length)
+            self.update_audio_file()
             messagebox.showinfo("Обрезка завершена", f"Файл обрезан: {start_percent}% - {end_percent}%.")
         else:
             messagebox.showerror("Ошибка", "Сначала загрузите аудиофайл.")
@@ -137,11 +145,39 @@ class SimpleAudioEditor:
             try:
                 db_change = float(self.volume_entry.get())
                 self.audio = self.audio + db_change
+                self.update_audio_file()
                 messagebox.showinfo("Громкость изменена", f"Громкость изменена на {db_change} дБ.")
             except ValueError:
                 messagebox.showerror("Ошибка", "Введите корректное числовое значение громкости.")
         else:
             messagebox.showerror("Ошибка", "Сначала загрузите аудиофайл.")
+
+    def change_speed(self):
+        if self.audio:
+            speed_percent = self.speed_scale.get()
+            self.audio = self.audio.speedup(playback_speed=speed_percent / 100.0)
+            self.audio_length = len(self.audio) / 1000
+            self.update_audio_file()
+            messagebox.showinfo("Скорость изменена", f"Скорость изменена на {speed_percent}%.")
+        else:
+            messagebox.showerror("Ошибка", "Сначала загрузите аудиофайл.")
+
+    def update_audio_file(self):
+        if self.is_playing or self.is_paused:
+            self.stop_audio()
+
+        temp_file = "temp_audio.wav"
+        if os.path.exists(temp_file):
+            try:
+                os.remove(temp_file)
+            except PermissionError:
+                messagebox.showerror("Ошибка",
+                                     "Не удалось обновить временный файл. Закройте приложения, использующие файл.")
+                return
+
+        self.audio.export(temp_file, format="wav")
+        pygame.mixer.music.load(temp_file)
+        self.audio_file = temp_file
 
     def save_audio(self):
         if self.audio:
