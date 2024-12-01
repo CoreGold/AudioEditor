@@ -51,7 +51,7 @@ class SimpleAudioEditor:
 
         # Изменение скорости
         Label(root, text="Изменение скорости воспроизведения").pack(pady=10)
-        self.speed_scale = Scale(root, from_=50, to=150, orient=HORIZONTAL, label="Скорость (%)", resolution=5)
+        self.speed_scale = Scale(root, from_=50, to=300, orient=HORIZONTAL, label="Скорость (%)", resolution=5)
         self.speed_scale.set(100)
         self.speed_scale.pack(pady=5)
         Button(root, text="Применить скорость", command=self.change_speed).pack(pady=5)
@@ -167,6 +167,8 @@ class SimpleAudioEditor:
             self.stop_audio()
 
         temp_file = "temp_audio.wav"
+
+        pygame.mixer.music.unload()
         if os.path.exists(temp_file):
             try:
                 os.remove(temp_file)
