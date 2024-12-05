@@ -16,6 +16,7 @@ class SimpleAudioEditor:
         self.is_playing = False
         self.is_paused = False
         self.current_position = 0  # Текущее время воспроизведения (в секундах)
+        self.history = []  # Стек состояний
 
         pygame.mixer.init()
 
@@ -56,13 +57,22 @@ class SimpleAudioEditor:
         self.speed_scale.pack(pady=5)
         Button(root, text="Применить скорость", command=self.change_speed).pack(pady=5)
 
+        # Управление состояниями
+        Button(root, text="Отменить последнее действие", command=self.undo_last_change).pack(pady=5)
+
         # Сохранение
         Button(root, text="Сохранить аудиофайл", command=self.save_audio).pack(pady=10)
+
+        # Удаление временных файлов при закрытии
+        self.root.protocol("WM_DELETE_WINDOW", self.cleanup_temp_files)
 
     def load_audio(self):
         file_path = filedialog.askopenfilename(filetypes=[("Audio Files", "*.mp3 *.wav")])
         if file_path:
             self.audio_file = file_path
+            self.audio = AudioSegment.from_file(file_path)
+            self.history.clear()
+            self.add_to_history()
             self.audio = AudioSegment.from_file(file_path)
             self.audio_length = len(self.audio) / 1000  # Длина в секундах
             pygame.mixer.music.load(file_path)
@@ -165,30 +175,52 @@ class SimpleAudioEditor:
     def update_audio_file(self):
         if self.is_playing or self.is_paused:
             self.stop_audio()
-
-        temp_file = "temp_audio.wav"
-
-        pygame.mixer.music.unload()
-        if os.path.exists(temp_file):
-            try:
-                os.remove(temp_file)
-            except PermissionError:
-                messagebox.showerror("Ошибка",
-                                     "Не удалось обновить временный файл. Закройте приложения, использующие файл.")
-                return
-
+        temp_file = f"Temp/temp_audio_{len(self.history)}.wav"
         self.audio.export(temp_file, format="wav")
+        self.add_to_history()
         pygame.mixer.music.load(temp_file)
         self.audio_file = temp_file
 
+    def add_to_history(self):
+        temp_file = f"Temp/temp_audio_{len(self.history)}.wav"
+        pygame.mixer.music.unload()
+        self.audio.export(temp_file, format="wav")
+        self.history.append(temp_file)
+
+    def undo_last_change(self):
+
+        if len(self.history) > 1:
+            if self.is_playing or self.is_paused:
+                self.stop_audio()
+            last_file = self.history.pop()
+            pygame.mixer.music.unload()
+            os.remove(last_file)  # Удаляем последний временный файл
+            previous_file = self.history[-1]
+            self.audio = AudioSegment.from_file(previous_file)
+            pygame.mixer.music.load(previous_file)
+            self.audio_file = previous_file
+            self.audio_length = len(self.audio) / 1000
+            self.canvas.delete("progress")
+            self.update_time_label(0, self.audio_length)
+            messagebox.showinfo("Откат изменений", "Последнее действие отменено.")
+        else:
+            messagebox.showinfo("Откат невозможен", "Нет предыдущих действий для отмены.")
+
     def save_audio(self):
         if self.audio:
-            save_path = filedialog.asksaveasfilename(defaultextension=".mp3", filetypes=[("MP3 Files", "*.mp3")])
+            save_path = filedialog.asksaveasfilename(defaultextension=".wav", filetypes=[("WAV files", "*.wav")])
             if save_path:
-                self.audio.export(save_path, format="mp3")
-                messagebox.showinfo("Файл сохранен", f"Файл успешно сохранен: {save_path}")
+                self.audio.export(save_path, format="wav")
+                messagebox.showinfo("Сохранено", f"Файл сохранён как {os.path.basename(save_path)}.")
         else:
-            messagebox.showerror("Ошибка", "Сначала загрузите и обработайте аудиофайл.")
+            messagebox.showerror("Ошибка", "Сначала загрузите аудиофайл.")
+
+    def cleanup_temp_files(self):
+        pygame.mixer.music.unload()
+        for temp_file in self.history:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+        self.root.destroy()
 
 
 if __name__ == "__main__":
