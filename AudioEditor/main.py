@@ -1,5 +1,5 @@
 import os
-from tkinter import Tk, Label, Button, filedialog, messagebox, Scale, HORIZONTAL, Canvas, Entry
+from tkinter import Tk, Label, Button, filedialog, messagebox, Scale, HORIZONTAL, Canvas, Entry, PhotoImage
 import pygame
 from pydub import AudioSegment
 
@@ -7,8 +7,8 @@ from pydub import AudioSegment
 class SimpleAudioEditor:
     def __init__(self, root):
         self.root = root
-        self.root.title("Простой Аудиоплеер и Редактор")
-        self.root.geometry("600x750")
+        self.root.title("AudioEditorMini")
+        self.root.geometry("984x520")
 
         self.audio_file = None
         self.audio = None
