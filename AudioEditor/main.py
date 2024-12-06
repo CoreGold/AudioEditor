@@ -36,11 +36,25 @@ class SimpleAudioEditor:
 
         # Обрезка
         Label(root, text="Обрезка аудиофайла").pack(pady=10)
-        self.trim_start = Scale(root, from_=0, to=100, orient=HORIZONTAL, label="Начало (%)")
-        self.trim_start.pack(pady=5)
-        self.trim_end = Scale(root, from_=0, to=100, orient=HORIZONTAL, label="Конец (%)")
-        self.trim_end.set(100)
-        self.trim_end.pack(pady=5)
+
+        # Ввод времени начала
+        Label(root, text="Начало:").pack()
+        self.start_minute_entry = Entry(root, width=5)
+        self.start_minute_entry.pack(side="left", padx=5)
+        Label(root, text="минуты").pack(side="left", padx=5)
+        self.start_second_entry = Entry(root, width=5)
+        self.start_second_entry.pack(side="left", padx=5)
+        Label(root, text="секунды").pack(side="left", padx=5)
+
+        # Ввод времени конца
+        Label(root, text="Конец:").pack(pady=10)
+        self.end_minute_entry = Entry(root, width=5)
+        self.end_minute_entry.pack(side="left", padx=5)
+        Label(root, text="минуты").pack(side="left", padx=5)
+        self.end_second_entry = Entry(root, width=5)
+        self.end_second_entry.pack(side="left", padx=5)
+        Label(root, text="секунды").pack(side="left", padx=5)
+
         Button(root, text="Применить обрезку", command=self.trim_audio).pack(pady=5)
 
         # Изменение громкости
@@ -134,19 +148,37 @@ class SimpleAudioEditor:
 
     def trim_audio(self):
         if self.audio:
-            start_percent = self.trim_start.get()
-            end_percent = self.trim_end.get()
-            if start_percent >= end_percent:
-                messagebox.showerror("Ошибка", "Начало должно быть меньше конца.")
-                return
-            start_ms = len(self.audio) * (start_percent / 100)
-            end_ms = len(self.audio) * (end_percent / 100)
-            self.audio = self.audio[int(start_ms):int(end_ms)]
-            self.audio_length = len(self.audio) / 1000
-            self.canvas.delete("progress")
-            self.update_time_label(0, self.audio_length)
-            self.update_audio_file()
-            messagebox.showinfo("Обрезка завершена", f"Файл обрезан: {start_percent}% - {end_percent}%.")
+            try:
+                # Получаем минуты и секунды для начала и конца обрезки
+                start_minute = int(self.start_minute_entry.get())
+                start_second = int(self.start_second_entry.get())
+                end_minute = int(self.end_minute_entry.get())
+                end_second = int(self.end_second_entry.get())
+
+                # Проверяем, чтобы секунды были в пределах 0-59
+                if start_second < 0 or start_second >= 60 or end_second < 0 or end_second >= 60:
+                    messagebox.showerror("Ошибка", "Секунды должны быть от 0 до 59.")
+                    return
+
+                # Переводим время в миллисекунды
+                start_ms = (start_minute * 60 + start_second) * 1000
+                end_ms = (end_minute * 60 + end_second) * 1000
+
+                # Проверяем, чтобы начало было меньше конца
+                if start_ms >= end_ms or end_ms > len(self.audio):
+                    messagebox.showerror("Ошибка", "Неверно указан интервал обрезки.")
+                    return
+
+                # Применяем обрезку
+                self.audio = self.audio[start_ms:end_ms]
+                self.audio_length = len(self.audio) / 1000  # Обновляем длину аудио
+                self.canvas.delete("progress")
+                self.update_time_label(0, self.audio_length)
+                self.update_audio_file()
+
+                messagebox.showinfo("Обрезка завершена", f"Аудиофайл обрезан: {start_minute}:{start_second} - {end_minute}:{end_second}.")
+            except ValueError:
+                messagebox.showerror("Ошибка", "Введите корректные числовые значения для минут и секунд.")
         else:
             messagebox.showerror("Ошибка", "Сначала загрузите аудиофайл.")
 
