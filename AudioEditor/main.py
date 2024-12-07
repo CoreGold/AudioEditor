@@ -363,13 +363,21 @@ class SimpleAudioEditor:
 
     def save_audio(self):
         if self.audio:
-            save_path = filedialog.asksaveasfilename(defaultextension=".wav", filetypes=[("WAV files", "*.wav")])
+            save_path = filedialog.asksaveasfilename(
+                defaultextension=".wav",
+                filetypes=[("WAV files", "*.wav"), ("MP3 files", "*.mp3")]
+            )
             if save_path:
-                self.audio.export(save_path, format="wav")
-                messagebox.showinfo("Сохранено", f"Файл сохранён как {os.path.basename(save_path)}.")
+                try:
+                    if save_path.endswith(".mp3"):
+                        self.audio.export(save_path, format="mp3")
+                    else:
+                        self.audio.export(save_path, format="wav")
+                    messagebox.showinfo("Сохранено", f"Файл сохранён как {os.path.basename(save_path)}.")
+                except Exception as e:
+                    messagebox.showerror("Ошибка сохранения", f"Произошла ошибка при сохранении файла: {str(e)}")
         else:
             messagebox.showerror("Ошибка", "Сначала загрузите аудиофайл.")
-
     def cleanup_temp_files(self):
         pygame.mixer.music.unload()
         for temp_file in self.history:
