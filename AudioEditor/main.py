@@ -18,6 +18,7 @@ class SimpleAudioEditor:
         self.is_paused = False
         self.current_position = 0  # Текущее время воспроизведения (в секундах)
         self.history = []  # Стек состояний
+        self.images = []
         pygame.mixer.init()
 
         canvas = Canvas(
@@ -31,10 +32,7 @@ class SimpleAudioEditor:
         )
         canvas.place(x=0, y=0)
 
-        self.images = []
-
         # Изображения
-
         image_image_1 = PhotoImage(file="Assets/image_1.png")
         self.images.append(image_image_1)
         canvas.create_image(55.0, 53.0, image=image_image_1)
@@ -124,10 +122,10 @@ class SimpleAudioEditor:
         stop_button.place(x=523.0, y=170.0, width=32.0, height=32.0)
 
         # Полоса прогресса
-        self.canvas_progress = Canvas(root, height=20, width=500, bg="gray")
-        self.canvas_progress.place(x=250.0, y=138.0)
-        self.time_label = Label(root, text="00:00   00:00", font=("Arial", 12), bg="white")
-        self.time_label.place(x=448.0, y=100.0)
+        self.canvas_progress = Canvas(root, height=20, width=500, bg="#f5f5f5")
+        self.canvas_progress.place(x=250.0, y=135.0)
+        self.time_label = Label(canvas, text="00:00 | 00:00", font=("Arial", 12), bg="white")
+        self.time_label.place(x=451.5, y=100.0)
 
         # Ввод границ обрезки
         short_entry_image = PhotoImage(file="Assets/short_entry.png")
@@ -169,7 +167,6 @@ class SimpleAudioEditor:
         canvas.create_text(810.0, 315.0, anchor="nw", text="Дб", fill="#000000", font=("Inter", 20 * -1))
 
         canvas.create_rectangle(131.0, 312.0, 132.0, 340.0, fill="#000000", outline="")
-        canvas.create_rectangle(496.0, 101.0, 499.0, 126.0, fill="#000000", outline="")
         canvas.create_rectangle(247.0, 312.0, 248.0, 340.0, fill="#000000", outline="")
         canvas.create_rectangle(176.0, 326.0, 204.0, 327.0, fill="#000000", outline="")
 
@@ -241,7 +238,7 @@ class SimpleAudioEditor:
         if self.is_playing:
             pygame.mixer.music.pause()
             self.is_paused = True
-            self.current_position += pygame.mixer.music.get_pos() / 1000  # Обновляем позицию
+            self.current_position += pygame.mixer.music.get_pos() / 10000  # Обновляем позицию
 
     def stop_audio(self):
         if self.is_playing or self.is_paused:
@@ -255,10 +252,10 @@ class SimpleAudioEditor:
     def update_progress(self):
         if self.is_playing and not self.is_paused:
             current_time = self.current_position + pygame.mixer.music.get_pos() / 1000
-            width = self.canvas.winfo_width()
+            width = self.canvas_progress.winfo_width()
             progress_width = int((current_time / self.audio_length) * width)
             self.canvas_progress.delete("progress")
-            self.canvas_progress.create_rectangle(0, 0, progress_width, 20, fill="green", tags="progress")
+            self.canvas_progress.create_rectangle(0, 0, progress_width, 20, fill="black", tags="progress")
             self.update_time_label(current_time, self.audio_length)
 
             if current_time < self.audio_length:
@@ -271,7 +268,7 @@ class SimpleAudioEditor:
         current_seconds = int(current_time % 60)
         total_minutes = int(total_time // 60)
         total_seconds = int(total_time % 60)
-        self.time_label.config(text=f"{current_minutes:02}:{current_seconds:02} / {total_minutes:02}:{total_seconds:02}")
+        self.time_label.config(text=f"{current_minutes:02}:{current_seconds:02} | {total_minutes:02}:{total_seconds:02}")
 
     def trim_audio(self):
         if self.audio:
@@ -299,7 +296,7 @@ class SimpleAudioEditor:
                 # Применяем обрезку
                 self.audio = self.audio[start_ms:end_ms]
                 self.audio_length = len(self.audio) / 1000  # Обновляем длину аудио
-                self.canvas.delete("progress")
+                self.canvas_progress.delete("progress")
                 self.update_time_label(0, self.audio_length)
                 self.update_audio_file()
 
