@@ -380,9 +380,16 @@ class SimpleAudioEditor:
             messagebox.showerror("Ошибка", "Сначала загрузите аудиофайл.")
     def cleanup_temp_files(self):
         pygame.mixer.music.unload()
-        for temp_file in self.history:
-            if os.path.exists(temp_file):
-                os.remove(temp_file)
+        temp_dir = os.path.join("Temp")
+        if os.path.exists(temp_dir) and os.path.isdir(temp_dir):
+            try:
+                for filename in os.listdir(temp_dir):
+                    if filename.startswith("temp_audio_"):
+                        file_path = os.path.join(temp_dir, filename)
+                        if os.path.isfile(file_path):
+                            os.remove(file_path)
+            except Exception as e:
+                messagebox.showerror("Ошибка", f"Не удалось очистить файлы в папке Temp: {str(e)}")
         self.root.destroy()
 
 
