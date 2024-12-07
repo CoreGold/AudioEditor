@@ -9,6 +9,7 @@ class SimpleAudioEditor:
         self.root = root
         self.root.title("AudioEditorMini")
         self.root.geometry("984x520")
+        self.root.configure(bg="#FFFFFF")
 
         self.audio_file = None
         self.audio = None
@@ -17,66 +18,192 @@ class SimpleAudioEditor:
         self.is_paused = False
         self.current_position = 0  # Текущее время воспроизведения (в секундах)
         self.history = []  # Стек состояний
-
         pygame.mixer.init()
 
-        Label(root, text="Простой Аудиоплеер и Редактор", font=("Arial", 16)).pack(pady=10)
+        canvas = Canvas(
+            root,
+            bg="#FFFFFF",
+            height=520,
+            width=984,
+            bd=0,
+            highlightthickness=0,
+            relief="ridge"
+        )
+        canvas.place(x=0, y=0)
 
-        Button(root, text="Открыть аудиофайл", command=self.load_audio).pack(pady=5)
+        self.images = []
+
+        # Изображения
+
+        image_image_1 = PhotoImage(file="Assets/image_1.png")
+        self.images.append(image_image_1)
+        canvas.create_image(55.0, 53.0, image=image_image_1)
+
+        image_image_2 = PhotoImage(file="Assets/image_2.png")
+        self.images.append(image_image_2)
+        canvas.create_image(491.0, 332.0, image=image_image_2)
+
+        image_image_3 = PhotoImage(file="Assets/image_3.png")
+        self.images.append(image_image_3)
+        canvas.create_image(190.0, 327.0, image=image_image_3)
+
+        image_image_4 = PhotoImage(file="Assets/image_4.png")
+        self.images.append(image_image_4)
+        canvas.create_image(505.0, 327.0, image=image_image_4)
+
+        image_image_5 = PhotoImage(file="Assets/image_5.png")
+        self.images.append(image_image_5)
+        canvas.create_image(807.0, 327.0, image=image_image_5)
+
+        # Кнопки управления
+        button_image_1 = PhotoImage(file="Assets/import.png")
+        self.images.append(button_image_1)
+        import_button = Button(
+            image=button_image_1,
+            borderwidth=0,
+            highlightthickness=0,
+            command=self.load_audio,
+            relief="flat"
+        )
+        import_button.place(x=39.0, y=444.0, width=173.0, height=40.0)
+
+        button_image_2 = PhotoImage(file="Assets/revert_button.png")
+        self.images.append(button_image_2)
+        revert_button = Button(
+            image=button_image_2,
+            borderwidth=0,
+            highlightthickness=0,
+            command=self.undo_last_change,
+            relief="flat"
+        )
+        revert_button.place(x=772.0, y=444.0, width=173.0, height=40.0)
+
+        button_image_3 = PhotoImage(file="Assets/export_button.png")
+        self.images.append(button_image_3)
+        export_button = Button(
+            image=button_image_3,
+            borderwidth=0,
+            highlightthickness=0,
+            command=self.save_audio,
+            relief="flat"
+        )
+        export_button.place(x=239.0, y=444.0, width=173.0, height=40.0)
+
+        # Кнопки воспроизведения
+        button_image_4 = PhotoImage(file="Assets/play_button.png")
+        self.images.append(button_image_4)
+        play_button = Button(
+            image=button_image_4,
+            borderwidth=0,
+            highlightthickness=0,
+            command=self.play_audio,
+            relief="flat"
+        )
+        play_button.place(x=445.0, y=170.0, width=32.0, height=32.0)
+
+        button_image_5 = PhotoImage(file="Assets/pause_button.png")
+        self.images.append(button_image_5)
+        pause_button = Button(
+            image=button_image_5,
+            borderwidth=0,
+            highlightthickness=0,
+            command=self.pause_audio,
+            relief="flat"
+        )
+        pause_button.place(x=484.0, y=170.0, width=32.0, height=32.0)
+
+        button_image_6 = PhotoImage(file="Assets/stop_button.png")
+        self.images.append(button_image_6)
+        stop_button = Button(
+            image=button_image_6,
+            borderwidth=0,
+            highlightthickness=0,
+            command=self.stop_audio,
+            relief="flat"
+        )
+        stop_button.place(x=523.0, y=170.0, width=32.0, height=32.0)
 
         # Полоса прогресса
-        Label(root, text="Плеер").pack(pady=5)
-        self.canvas = Canvas(root, height=20, width=500, bg="gray")
-        self.canvas.pack(pady=10)
-        self.time_label = Label(root, text="00:00 / 00:00", font=("Arial", 12))
-        self.time_label.pack(pady=5)
-        Button(root, text="▶️ Воспроизвести", command=self.play_audio).pack(side="left", padx=10)
-        Button(root, text="⏸️ Пауза", command=self.pause_audio).pack(side="left", padx=10)
-        Button(root, text="⏹️ Остановить", command=self.stop_audio).pack(side="left", padx=10)
+        self.canvas_progress = Canvas(root, height=20, width=500, bg="gray")
+        self.canvas_progress.place(x=250.0, y=138.0)
+        self.time_label = Label(root, text="00:00   00:00", font=("Arial", 12), bg="white")
+        self.time_label.place(x=448.0, y=100.0)
 
-        # Обрезка
-        Label(root, text="Обрезка аудиофайла").pack(pady=10)
+        # Ввод границ обрезки
+        short_entry_image = PhotoImage(file="Assets/short_entry.png")
+        self.images.append(short_entry_image)
+        canvas.create_image(110.0, 327.0, image=short_entry_image)
+        canvas.create_image(155.0, 327.0, image=short_entry_image)
+        canvas.create_image(226.0, 327.0, image=short_entry_image)
+        canvas.create_image(271.0, 327.0, image=short_entry_image)
 
-        # Ввод времени начала
-        Label(root, text="Начало:").pack()
-        self.start_minute_entry = Entry(root, width=5)
-        self.start_minute_entry.pack(side="left", padx=5)
-        Label(root, text="минуты").pack(side="left", padx=5)
-        self.start_second_entry = Entry(root, width=5)
-        self.start_second_entry.pack(side="left", padx=5)
-        Label(root, text="секунды").pack(side="left", padx=5)
+        self.start_minute_entry = Entry(bd=0, bg="#FFFFFF", fg="#000716", highlightthickness=0)
+        self.start_minute_entry.place(x=103.4, y=317.0, width=18.0, height=20.0)
 
-        # Ввод времени конца
-        Label(root, text="Конец:").pack(pady=10)
-        self.end_minute_entry = Entry(root, width=5)
-        self.end_minute_entry.pack(side="left", padx=5)
-        Label(root, text="минуты").pack(side="left", padx=5)
-        self.end_second_entry = Entry(root, width=5)
-        self.end_second_entry.pack(side="left", padx=5)
-        Label(root, text="секунды").pack(side="left", padx=5)
+        self.start_second_entry = Entry(bd=0, bg="#FFFFFF", fg="#000716", highlightthickness=0)
+        self.start_second_entry.place(x=148.4, y=317.0, width=18.0, height=20.0)
 
-        Button(root, text="Применить обрезку", command=self.trim_audio).pack(pady=5)
+        self.end_minute_entry = Entry(bd=0, bg="#FFFFFF", fg="#000716", highlightthickness=0)
+        self.end_minute_entry.place(x=219.4, y=317.0, width=18.0, height=20.0)
+
+        self.end_second_entry = Entry(bd=0, bg="#FFFFFF", fg="#000716", highlightthickness=0)
+        self.end_second_entry.place(x=264.4, y=317.0, width=18.0, height=20.0)
 
         # Изменение громкости
-        Label(root, text="Изменение громкости").pack(pady=10)
-        Label(root, text="Введите значение в дБ (например, -5 или 10)").pack()
-        self.volume_entry = Entry(root, width=10)
-        self.volume_entry.pack(pady=5)
-        Button(root, text="Применить громкость", command=self.adjust_volume).pack(pady=5)
+        entry_image_5 = PhotoImage(file="Assets/volume_entry.png")
+        self.images.append(entry_image_5)
+        canvas.create_image(790.0, 327.0, image=short_entry_image)
+        self.volume_entry = Entry(bd=0, bg="#FFFFFF", fg="#000716", highlightthickness=0)
+        self.volume_entry.place(x=780.0, y=317.0, width=21.0, height=20.0)
 
         # Изменение скорости
-        Label(root, text="Изменение скорости воспроизведения").pack(pady=10)
-        self.speed_scale = Scale(root, from_=50, to=300, orient=HORIZONTAL, label="Скорость (%)", resolution=5)
+
+        self.speed_scale = Scale(root, from_=10, to=200, orient=HORIZONTAL, resolution=1, bg="#FFFFFF")
         self.speed_scale.set(100)
-        self.speed_scale.pack(pady=5)
-        Button(root, text="Применить скорость", command=self.change_speed).pack(pady=5)
+        self.speed_scale.place(x=375.0, y=300.0, width = 260.0, height = 50.0)
 
-        # Управление состояниями
-        Button(root, text="Отменить последнее действие", command=self.undo_last_change).pack(pady=5)
+        # GUI
+        canvas.create_text(367.5, 275.0, anchor="nw", text="Изменить скорость воспроизведения", fill="#000000",font=("Inter", 16 * -1))
+        canvas.create_text(730.0, 274.0, anchor="nw", text="Изменить громкость", fill="#000000",font=("Inter", 16 * -1))
+        canvas.create_text(151.0, 273.0, anchor="nw", text="Обрезать", fill="#000000", font=("Inter", 16 * -1))
+        canvas.create_text(810.0, 315.0, anchor="nw", text="Дб", fill="#000000", font=("Inter", 20 * -1))
 
-        # Сохранение
-        Button(root, text="Сохранить аудиофайл", command=self.save_audio).pack(pady=10)
+        canvas.create_rectangle(131.0, 312.0, 132.0, 340.0, fill="#000000", outline="")
+        canvas.create_rectangle(496.0, 101.0, 499.0, 126.0, fill="#000000", outline="")
+        canvas.create_rectangle(247.0, 312.0, 248.0, 340.0, fill="#000000", outline="")
+        canvas.create_rectangle(176.0, 326.0, 204.0, 327.0, fill="#000000", outline="")
 
+        # Кнопки "Применить"
+        apply_image = PhotoImage(file="Assets/apply.png")
+        self.images.append(apply_image)
+        speed_apply_button = Button(
+            image=apply_image,
+            borderwidth=0,
+            highlightthickness=0,
+            command=self.change_speed,
+            relief="flat"
+        )
+        speed_apply_button.place(x=448.0, y=363.0, width=113.0, height=27.0)
+
+        trim_apply_button = Button(
+            image=apply_image,
+            borderwidth=0,
+            highlightthickness=0,
+            command=self.trim_audio,
+            relief="flat"
+        )
+        trim_apply_button.place(x=132.0, y=363.0, width=113.0, height=27.0)
+
+        volume_apply_button = Button(
+            image=apply_image,
+            borderwidth=0,
+            highlightthickness=0,
+            command=self.adjust_volume,
+            relief="flat"
+        )
+        volume_apply_button.place(x=751.0, y=363.0, width=113.0, height=27.0)
+
+        root.resizable(False, False)
         # Удаление временных файлов при закрытии
         self.root.protocol("WM_DELETE_WINDOW", self.cleanup_temp_files)
 
@@ -92,7 +219,7 @@ class SimpleAudioEditor:
             pygame.mixer.music.load(file_path)
             self.is_playing = False
             self.current_position = 0
-            self.canvas.delete("progress")
+            self.canvas_progress.delete("progress")
             self.update_time_label(0, self.audio_length)
             messagebox.showinfo("Файл загружен", f"Файл {os.path.basename(file_path)} успешно загружен.")
 
@@ -122,7 +249,7 @@ class SimpleAudioEditor:
             self.is_playing = False
             self.is_paused = False
             self.current_position = 0
-            self.canvas.delete("progress")
+            self.canvas_progress.delete("progress")
             self.update_time_label(0, self.audio_length)
 
     def update_progress(self):
@@ -130,8 +257,8 @@ class SimpleAudioEditor:
             current_time = self.current_position + pygame.mixer.music.get_pos() / 1000
             width = self.canvas.winfo_width()
             progress_width = int((current_time / self.audio_length) * width)
-            self.canvas.delete("progress")
-            self.canvas.create_rectangle(0, 0, progress_width, 20, fill="green", tags="progress")
+            self.canvas_progress.delete("progress")
+            self.canvas_progress.create_rectangle(0, 0, progress_width, 20, fill="green", tags="progress")
             self.update_time_label(current_time, self.audio_length)
 
             if current_time < self.audio_length:
@@ -220,7 +347,6 @@ class SimpleAudioEditor:
         self.history.append(temp_file)
 
     def undo_last_change(self):
-
         if len(self.history) > 1:
             if self.is_playing or self.is_paused:
                 self.stop_audio()
@@ -232,7 +358,7 @@ class SimpleAudioEditor:
             pygame.mixer.music.load(previous_file)
             self.audio_file = previous_file
             self.audio_length = len(self.audio) / 1000
-            self.canvas.delete("progress")
+            self.canvas_progress.delete("progress")
             self.update_time_label(0, self.audio_length)
             messagebox.showinfo("Откат изменений", "Последнее действие отменено.")
         else:
