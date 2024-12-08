@@ -2,12 +2,22 @@ import os
 from tkinter import Tk, Label, Button, filedialog, messagebox, Scale, HORIZONTAL, Canvas, Entry, PhotoImage
 import pygame
 from pydub import AudioSegment
+import sys
 
+if getattr(sys, 'frozen', False): 
+    base_path = sys._MEIPASS
+    ffmpeg_path = os.path.join(base_path, "bin","ffmpeg")
+else:
+    ffmpeg_path = r"bin/ffmpeg"
+
+os.environ["PATH"] += os.pathsep + ffmpeg_path
 
 class SimpleAudioEditor:
     def __init__(self, root):
         self.root = root
-        self.root.title("AudioEditorMini")
+        self.root.title("")
+        icon = PhotoImage('icon_music.ico')
+        self.root.iconbitmap(icon)
         self.root.geometry("984x520")
         self.root.configure(bg="#FFFFFF")
 
@@ -394,6 +404,8 @@ class SimpleAudioEditor:
 
 
 if __name__ == "__main__":
+
+    #AudioSegment.ffprobe = r'bin/ffmpeg.exe'
     root = Tk()
     app = SimpleAudioEditor(root)
     root.mainloop()
